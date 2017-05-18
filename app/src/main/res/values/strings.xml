@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="popular">Popular Movies</string>
+    <string name="toprated">Top Rated Movies</string>
+    <string name="filter">Filter</string>
+    <string name="title_activity_movie_details">Movie Details</string>
+    <string name="releasedate">Release date. %s</string>
+    <string name="rating">Rating. %.2f</string>
+</resources>

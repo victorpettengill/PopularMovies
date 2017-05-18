@@ -1,0 +1,27 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="victor.pettengill.popularmovies.MoviesActivity">
+
+    <item android:id="@+id/filter"
+        android:title="@string/filter"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_filter">
+
+        <menu>
+
+            <item
+                android:id="@+id/popular"
+                android:orderInCategory="100"
+                android:title="@string/popular"
+                app:showAsAction="never" />
+
+            <item android:id="@+id/top_rated"
+                android:title="@string/toprated"
+                app:showAsAction="never"/>
+
+        </menu>
+
+    </item>
+
+</menu>
