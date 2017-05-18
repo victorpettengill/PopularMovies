@@ -25,7 +25,7 @@ import victor.pettengill.popularmovies.network.NetworkUtils;
 
 public class MoviesDao {
 
-    private final String APIURL = "http://api.themoviedb.org/3/movie/%s?api_key=1668c5dd4e446f81205b03c3e7584af1";
+    private final String APIURL = "http://api.themoviedb.org/3/movie/%s?api_key=";
     private static MoviesDao instance;
 
     public static MoviesDao getInstance() {
