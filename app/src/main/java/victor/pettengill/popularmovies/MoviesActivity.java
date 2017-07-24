@@ -1,6 +1,7 @@
 package victor.pettengill.popularmovies;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.LoaderManager;
@@ -50,7 +51,18 @@ public class MoviesActivity extends AppCompatActivity implements
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(MoviesActivity.this, 2);
+        GridLayoutManager gridLayoutManager;
+
+        int orientation = this.getResources().getConfiguration().orientation;
+
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            gridLayoutManager = new GridLayoutManager(MoviesActivity.this, 2);
+
+        } else {
+            gridLayoutManager = new GridLayoutManager(MoviesActivity.this, 3);
+
+        }
+
         recyclerView.setLayoutManager(gridLayoutManager);
 
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -94,33 +106,6 @@ public class MoviesActivity extends AppCompatActivity implements
             loaderManager.restartLoader(MOVIE_LOADER, bundle, this);
         }
 
-//        MoviesDao.getInstance().getMovies(sortType, new MoviesDao.MoviesRequestResult() {
-//            @Override
-//            public void onError(String error) {
-//
-//                Snackbar.make(coordinatorLayout, error, Snackbar.LENGTH_LONG).show();
-//                refreshLayout.setRefreshing(false);
-//
-//            }
-//
-//            @Override
-//            public void onSuccess(final List<Movie> movies) {
-//
-//                refreshLayout.setRefreshing(false);
-//                recyclerView.setAdapter(new MovieAdapter(MoviesActivity.this, movies, new MovieAdapter.MovieClickListener() {
-//                    @Override
-//                    public void onClick(int position) {
-//
-//                        Intent i = new Intent(MoviesActivity.this, MovieDetailsActivity.class);
-//                        i.putExtra("movie", movies.get(position));
-//                        startActivity(i);
-//
-//                    }
-//                }));
-//
-//            }
-//        });
-
     }
 
     @Override
@@ -157,6 +142,11 @@ public class MoviesActivity extends AppCompatActivity implements
                 getSupportActionBar().setTitle(getString(R.string.popular));
                 break;
 
+            case R.id.favorites:
+                getMovies(SortType.FAVORITES);
+                getSupportActionBar().setTitle(R.string.favorite_movies);
+                break;
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -182,7 +172,7 @@ public class MoviesActivity extends AppCompatActivity implements
 
             @Override
             public ArrayList<Movie> loadInBackground() {
-                return MoviesDao.getInstance().getMovies(args.getString(LOADER_QUERY_KEY));
+                return MoviesDao.getInstance(MoviesActivity.this).getMovies(args.getString(LOADER_QUERY_KEY));
             }
 
         };
@@ -195,10 +185,11 @@ public class MoviesActivity extends AppCompatActivity implements
 
             movies = data;
 
-            refreshLayout.setRefreshing(false);
             recyclerView.setAdapter(new MovieAdapter(MoviesActivity.this, movies, MoviesActivity.this));
 
         }
+
+        refreshLayout.setRefreshing(false);
 
     }
 
@@ -208,10 +199,10 @@ public class MoviesActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onClick(int position) {
+    public void onClick(Movie movie) {
 
         Intent i = new Intent(MoviesActivity.this, MovieDetailsActivity.class);
-        i.putExtra("movie", movies.get(position));
+        i.putExtra("movie", movie);
         startActivity(i);
 
     }

@@ -1,33 +1,60 @@
 package victor.pettengill.popularmovies;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import victor.pettengill.popularmovies.adapter.ReviewAdapter;
+import victor.pettengill.popularmovies.adapter.TrailerAdapter;
 import victor.pettengill.popularmovies.beans.Movie;
+import victor.pettengill.popularmovies.beans.Review;
+import victor.pettengill.popularmovies.beans.Trailer;
+import victor.pettengill.popularmovies.dao.MoviesDao;
 
-public class MovieDetailsActivity extends AppCompatActivity {
+public class MovieDetailsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Movie>, TrailerAdapter.TrailerClickListener {
 
     @BindView(R.id.image) ImageView image;
     @BindView(R.id.title) TextView title;
     @BindView(R.id.releasedate) TextView releaseDate;
     @BindView(R.id.rating) TextView rating;
     @BindView(R.id.synopsis) TextView synopsis;
+
+    @BindView(R.id.holderInfo) LinearLayout holderinfo;
+    @BindView(R.id.progressInfo) ProgressBar progressInfo;
+    @BindView(R.id.trailersRecycler) RecyclerView trailersRecycler;
+    @BindView(R.id.reviewsRecycler) RecyclerView reviewsRecycler;
+
+    private Movie movie;
+    private ArrayList<Trailer> trailers;
+
+    private static final int MOVIE_LOADER = 22;
+    private boolean favorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +69,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
 
-        Movie movie = getIntent().getParcelableExtra("movie");
+        movie = getIntent().getParcelableExtra("movie");
 
         Picasso.with(this).load(movie.getMoviePosterThumbnail()).into(image);
         title.setText(movie.getOriginalTitle());
@@ -50,9 +77,192 @@ public class MovieDetailsActivity extends AppCompatActivity {
         DateFormat format = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
 
         releaseDate.setText(String.format(getString(R.string.releasedate), format.format(movie.getReleaseDate())));
-
         rating.setText(String.format(getString(R.string.rating), movie.getUserRating()));
         synopsis.setText(movie.getSynopsis());
+
+        getMovieTrailersAndReviews();
+
+        verifyFavorite();
+
+    }
+
+    public void verifyFavorite() {
+
+        new AsyncTask<Movie, Void, Boolean>() {
+
+            @Override
+            protected Boolean doInBackground(Movie... params) {
+                return MoviesDao.getInstance(MovieDetailsActivity.this).movieIsFavorite(params[0]);
+            }
+
+            @Override
+            protected void onPostExecute(Boolean aBoolean) {
+                super.onPostExecute(aBoolean);
+
+                favorite = aBoolean;
+                invalidateOptionsMenu();
+
+            }
+
+        }.execute(movie);
+
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if(item.getItemId() == R.id.favorite) {
+
+            if (!favorite) {
+
+                new AsyncTask<Movie, Void, Void>() {
+
+                    @Override
+                    protected Void doInBackground(Movie... params) {
+                        MoviesDao.getInstance(MovieDetailsActivity.this).addMovieAsFavorite(params[0]);
+
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+
+                        favorite = true;
+                        invalidateOptionsMenu();
+
+                    }
+
+                }.execute(movie);
+
+            } else {
+
+                new AsyncTask<Movie, Void, Void>() {
+
+                    @Override
+                    protected Void doInBackground(Movie... params) {
+                        MoviesDao.getInstance(MovieDetailsActivity.this).removeFromFavorite(params[0]);
+
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+
+                        favorite = false;
+                        invalidateOptionsMenu();
+
+                    }
+
+                }.execute(movie);
+
+            }
+
+            return true;
+
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        if(!favorite) {
+            getMenuInflater().inflate(R.menu.menu_movie_off, menu);
+        } else {
+            getMenuInflater().inflate(R.menu.menu_movie_on, menu);
+        }
+
+        return true;
+    }
+
+    private void getMovieTrailersAndReviews() {
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> githubSearchLoader = loaderManager.getLoader(MOVIE_LOADER);
+        if (githubSearchLoader == null) {
+            loaderManager.initLoader(MOVIE_LOADER, null, this);
+        } else {
+            loaderManager.restartLoader(MOVIE_LOADER, null, this);
+        }
+
+    }
+
+    @Override
+    public Loader<Movie> onCreateLoader(int id, Bundle args) {
+        return new AsyncTaskLoader<Movie>(this) {
+
+            @Override
+            protected void onStartLoading() {
+                super.onStartLoading();
+
+                onForceLoad();
+            }
+
+            @Override
+            public Movie loadInBackground() {
+
+                List<Trailer> trailers = MoviesDao.getInstance(MovieDetailsActivity.this).getMovieTrailers(movie);
+                List<Review> reviews = MoviesDao.getInstance(MovieDetailsActivity.this).getMoviewReviews(movie);
+
+                movie.setTrailers(trailers);
+                movie.setReviews(reviews);
+
+                return movie;
+            }
+
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Movie> loader, Movie data) {
+
+        progressInfo.setVisibility(View.GONE);
+        holderinfo.setVisibility(View.VISIBLE);
+
+        if(movie.getTrailers() != null) {
+
+            trailersRecycler.setLayoutManager(new LinearLayoutManager(MovieDetailsActivity.this, LinearLayoutManager.VERTICAL, false));
+            trailersRecycler.setAdapter(new TrailerAdapter(MovieDetailsActivity.this, data.getTrailers(), this));
+
+        }
+
+        if(movie.getReviews() != null) {
+
+            reviewsRecycler.setLayoutManager(new LinearLayoutManager(MovieDetailsActivity.this, LinearLayoutManager.VERTICAL, false));
+            reviewsRecycler.setAdapter(new ReviewAdapter(MovieDetailsActivity.this, data.getReviews()));
+
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Movie> loader) {
+
+    }
+
+    @Override
+    public void onClick(Trailer trailer) {
+
+        openTrailer(trailer.getTrailerKey());
+
+    }
+
+    public void openTrailer(String id) {
+        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + id));
+        Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("http://www.youtube.com/watch?v=" + id));
+
+        //Try to open on youtube app, if not available, use web browser
+        try {
+            startActivity(appIntent);
+        } catch (ActivityNotFoundException ex) {
+            startActivity(webIntent);
+        }
 
     }
 

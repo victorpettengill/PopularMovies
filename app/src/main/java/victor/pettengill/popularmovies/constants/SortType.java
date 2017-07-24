@@ -8,5 +8,6 @@ public class SortType {
 
     public static String POPULARITY = "popular";
     public static String HIGHESTRATED = "top_rated";
+    public static String FAVORITES = "favorites";
 
 }

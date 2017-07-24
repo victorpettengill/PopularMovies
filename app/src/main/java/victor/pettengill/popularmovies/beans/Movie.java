@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -17,17 +18,24 @@ import java.util.Locale;
 
 public class Movie implements Parcelable{
 
+    private String movieId;
     private String originalTitle;
     private String moviePoster;
     private String moviePosterThumbnail;
     private String synopsis;
     private double userRating;
     private Date releaseDate;
+    private List<Trailer> trailers;
+    private List<Review> reviews;
 
     public Movie() {
     }
 
     public Movie(JSONObject object) throws JSONException, ParseException {
+
+        if(object.has("id")) {
+            movieId = object.getString("id");
+        }
 
         if(object.has("original_title")) {
             originalTitle = object.getString("original_title");
@@ -59,6 +67,7 @@ public class Movie implements Parcelable{
     }
 
     protected Movie(Parcel in) {
+        movieId = in.readString();
         originalTitle = in.readString();
         moviePoster = in.readString();
         moviePosterThumbnail = in.readString();
@@ -78,6 +87,14 @@ public class Movie implements Parcelable{
             return new Movie[size];
         }
     };
+
+    public String getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(String movieId) {
+        this.movieId = movieId;
+    }
 
     public String getOriginalTitle() {
         return originalTitle;
@@ -127,6 +144,22 @@ public class Movie implements Parcelable{
         this.moviePosterThumbnail = moviePosterThumbnail;
     }
 
+    public List<Trailer> getTrailers() {
+        return trailers;
+    }
+
+    public void setTrailers(List<Trailer> trailers) {
+        this.trailers = trailers;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -134,6 +167,7 @@ public class Movie implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(movieId);
         dest.writeString(originalTitle);
         dest.writeString(moviePoster);
         dest.writeString(moviePosterThumbnail);
