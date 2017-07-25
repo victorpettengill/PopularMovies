@@ -65,6 +65,21 @@
 
                 </LinearLayout>
 
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBottom="@+id/image"
+                    android:layout_toRightOf="@+id/image"
+                    android:layout_toEndOf="@+id/image"
+                    android:text="@string/share_trailer"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="10dp"
+                    android:drawableRight="@drawable/ic_share"
+                    android:drawableEnd="@drawable/ic_share"
+                    android:drawablePadding="@dimen/fab_margin"
+                    android:id="@+id/trailerShare"
+                    android:visibility="gone"/>
+
             </RelativeLayout>
 
             <View
@@ -90,6 +105,7 @@
             <ProgressBar
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 android:layout_gravity="center_horizontal"
                 android:id="@+id/progressInfo"/>
 

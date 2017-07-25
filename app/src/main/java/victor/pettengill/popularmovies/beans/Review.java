@@ -1,5 +1,8 @@
 package victor.pettengill.popularmovies.beans;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -9,7 +12,7 @@ import java.text.ParseException;
  * Created by appimagetech on 24/07/17.
  */
 
-public class Review {
+public class Review implements Parcelable{
 
     private String reviewId;
     private String reviewAuthor;
@@ -34,6 +37,24 @@ public class Review {
 
     }
 
+    protected Review(Parcel in) {
+        reviewId = in.readString();
+        reviewAuthor = in.readString();
+        reviewContent = in.readString();
+    }
+
+    public static final Creator<Review> CREATOR = new Creator<Review>() {
+        @Override
+        public Review createFromParcel(Parcel in) {
+            return new Review(in);
+        }
+
+        @Override
+        public Review[] newArray(int size) {
+            return new Review[size];
+        }
+    };
+
     public String getReviewId() {
         return reviewId;
     }
@@ -56,5 +77,17 @@ public class Review {
 
     public void setReviewContent(String reviewContent) {
         this.reviewContent = reviewContent;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(reviewId);
+        dest.writeString(reviewAuthor);
+        dest.writeString(reviewContent);
     }
 }

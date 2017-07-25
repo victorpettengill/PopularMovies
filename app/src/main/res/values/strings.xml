@@ -12,4 +12,6 @@
     <string name="unfavorite">Unfavorite</string>
     <string name="favorites">Favorites</string>
     <string name="favorite_movies">Favorite Movies</string>
+    <string name="share_trailer">Send Trailer</string>
+    <string name="share_with">Share with:</string>
 </resources>

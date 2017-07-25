@@ -3,6 +3,7 @@
     package="victor.pettengill.popularmovies">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:allowBackup="true"
@@ -31,6 +32,12 @@
                 android:value=".MoviesActivity" />
 
         </activity>
+
+        <provider
+            android:authorities="victor.pettengill.popularmovies"
+            android:name=".provider.FavoriteMoviesProvider"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

@@ -74,6 +74,9 @@ public class Movie implements Parcelable{
         synopsis = in.readString();
         userRating = in.readDouble();
         releaseDate = new Date(in.readLong());
+        in.readList(trailers, Trailer.class.getClassLoader());
+        in.readList(reviews, Review.class.getClassLoader());
+
     }
 
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
@@ -160,6 +163,7 @@ public class Movie implements Parcelable{
         this.reviews = reviews;
     }
 
+
     @Override
     public int describeContents() {
         return 0;
@@ -174,5 +178,8 @@ public class Movie implements Parcelable{
         dest.writeString(synopsis);
         dest.writeDouble(userRating);
         dest.writeLong(releaseDate.getTime());
+        dest.writeList(trailers);
+        dest.writeList(reviews);
+
     }
 }

@@ -1,5 +1,8 @@
 package victor.pettengill.popularmovies.beans;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -9,7 +12,7 @@ import java.text.ParseException;
  * Created by appimagetech on 24/07/17.
  */
 
-public class Trailer {
+public class Trailer implements Parcelable{
 
     private String trailerId;
     private String trailerName;
@@ -43,6 +46,26 @@ public class Trailer {
         }
 
     }
+
+    protected Trailer(Parcel in) {
+        trailerId = in.readString();
+        trailerName = in.readString();
+        trailerSite = in.readString();
+        trailerType = in.readString();
+        trailerKey = in.readString();
+    }
+
+    public static final Creator<Trailer> CREATOR = new Creator<Trailer>() {
+        @Override
+        public Trailer createFromParcel(Parcel in) {
+            return new Trailer(in);
+        }
+
+        @Override
+        public Trailer[] newArray(int size) {
+            return new Trailer[size];
+        }
+    };
 
     public String getTrailerId() {
         return trailerId;
@@ -85,4 +108,17 @@ public class Trailer {
     }
 
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(trailerId);
+        dest.writeString(trailerName);
+        dest.writeString(trailerSite);
+        dest.writeString(trailerType);
+        dest.writeString(trailerKey);
+    }
 }

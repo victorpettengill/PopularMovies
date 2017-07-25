@@ -4,6 +4,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,24 +40,17 @@ public class MoviesDao {
     private final String MOVIES_REVIEWS_API = "movie/%s/reviews";
 
     private static MoviesDao instance;
-    private DBHelper dbHelper;
 
-    public static MoviesDao getInstance(Context context) {
+    public static MoviesDao getInstance() {
 
         if(instance == null) {
-            instance = new MoviesDao(context);
+            instance = new MoviesDao();
         }
 
         return instance;
     }
 
-    public MoviesDao(Context context) {
-
-        dbHelper = new DBHelper(context);
-
-    }
-
-    public ArrayList<Movie> getMovies(String sortType) {
+    public ArrayList<Movie> getMovies(Context context, String sortType) {
 
         ArrayList<Movie> movies = null;
 
@@ -95,7 +90,7 @@ public class MoviesDao {
             }
 
         } else {
-            movies = getFavoriteMovies();
+            movies = getFavoriteMovies(context);
         }
 
         return movies;
@@ -182,10 +177,9 @@ public class MoviesDao {
         return reviews;
     }
 
-    public ArrayList<Movie> getFavoriteMovies() {
+    public ArrayList<Movie> getFavoriteMovies(Context context) {
 
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(PopularMoviesContract.MovieEntry.TABLE_NAME, null, null, null, null, null, PopularMoviesContract.MovieEntry.COLUMN_MOVIEW_RELEASE_DATE);
+        Cursor cursor = context.getContentResolver().query(PopularMoviesContract.MovieEntry.CONTENT_URI, null, null, null, PopularMoviesContract.MovieEntry.COLUMN_MOVIEW_RELEASE_DATE);
 
         ArrayList<Movie> movies = null;
 
@@ -212,9 +206,7 @@ public class MoviesDao {
         return movies;
     }
 
-    public void addMovieAsFavorite(Movie movie) {
-
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+    public void addMovieAsFavorite(Context context, Movie movie) {
 
         ContentValues cv = new ContentValues();
         cv.put(PopularMoviesContract.MovieEntry.COLUMN_MOVIE_ID, movie.getMovieId());
@@ -225,30 +217,37 @@ public class MoviesDao {
         cv.put(PopularMoviesContract.MovieEntry.COLUMN_MOVIE_USER_RATING, movie.getUserRating());
         cv.put(PopularMoviesContract.MovieEntry.COLUMN_MOVIEW_RELEASE_DATE, movie.getReleaseDate().getTime());
 
-        db.insert(PopularMoviesContract.MovieEntry.TABLE_NAME, null, cv);
+        Uri uri = context.getContentResolver().insert(PopularMoviesContract.MovieEntry.CONTENT_URI, cv);
+
+        if(uri != null) {
+            Log.i("uri", uri.toString());
+        }
 
     }
 
-    public void removeFromFavorite(Movie movie) {
+    public void removeFromFavorite(Context context, Movie movie) {
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        db.delete(PopularMoviesContract.MovieEntry.TABLE_NAME, PopularMoviesContract.MovieEntry.COLUMN_MOVIE_ID+"=?", new String[]{movie.getMovieId()});
+        context.getContentResolver().delete(PopularMoviesContract.MovieEntry.CONTENT_URI, PopularMoviesContract.MovieEntry.COLUMN_MOVIE_ID+"=?", new String[]{movie.getMovieId()});
 
     }
 
-    public boolean movieIsFavorite(Movie movie) {
+    public boolean movieIsFavorite(Context context, Movie movie) {
 
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(PopularMoviesContract.MovieEntry.TABLE_NAME, null, PopularMoviesContract.MovieEntry.COLUMN_MOVIE_ID+"=?", new String[]{movie.getMovieId()}, null, null, PopularMoviesContract.MovieEntry.COLUMN_MOVIEW_RELEASE_DATE);
+        Uri uri = PopularMoviesContract.MovieEntry.CONTENT_URI.buildUpon().appendPath(movie.getMovieId()).build();
+
+        Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
         boolean isFavorite = false;
 
-        if(cursor.moveToFirst()) {
-            isFavorite = true;
-        }
+        if(cursor != null) {
 
-        cursor.close();
+            if (cursor.moveToFirst()) {
+                isFavorite = true;
+            }
+
+            cursor.close();
+
+        }
 
         return isFavorite;
     }

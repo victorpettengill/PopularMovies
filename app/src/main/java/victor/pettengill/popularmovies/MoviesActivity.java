@@ -91,6 +91,14 @@ public class MoviesActivity extends AppCompatActivity implements
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+//        getSupportLoaderManager().restartLoader(MOVIE_LOADER, null, this);
+
+    }
+
     public void getMovies(String sortType) {
 
         currentSort = sortType;
@@ -172,7 +180,7 @@ public class MoviesActivity extends AppCompatActivity implements
 
             @Override
             public ArrayList<Movie> loadInBackground() {
-                return MoviesDao.getInstance(MoviesActivity.this).getMovies(args.getString(LOADER_QUERY_KEY));
+                return MoviesDao.getInstance().getMovies(MoviesActivity.this, args.getString(LOADER_QUERY_KEY));
             }
 
         };

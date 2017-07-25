@@ -16,6 +16,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -24,18 +25,19 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import victor.pettengill.popularmovies.adapter.ReviewAdapter;
 import victor.pettengill.popularmovies.adapter.TrailerAdapter;
 import victor.pettengill.popularmovies.beans.Movie;
 import victor.pettengill.popularmovies.beans.Review;
 import victor.pettengill.popularmovies.beans.Trailer;
 import victor.pettengill.popularmovies.dao.MoviesDao;
+import victor.pettengill.popularmovies.network.NetworkUtils;
 
 public class MovieDetailsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Movie>, TrailerAdapter.TrailerClickListener {
 
@@ -50,11 +52,14 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
     @BindView(R.id.trailersRecycler) RecyclerView trailersRecycler;
     @BindView(R.id.reviewsRecycler) RecyclerView reviewsRecycler;
 
+    @BindView(R.id.trailerShare) Button trailerShare;
+
     private Movie movie;
-    private ArrayList<Trailer> trailers;
 
     private static final int MOVIE_LOADER = 22;
     private boolean favorite = false;
+
+    private static final String ARGS_EXTRA = "movies";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +76,55 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
         movie = getIntent().getParcelableExtra("movie");
 
+        if(savedInstanceState != null) {
+
+            if(savedInstanceState.containsKey(ARGS_EXTRA)) {
+
+                movie = savedInstanceState.getParcelable(ARGS_EXTRA);
+
+                progressInfo.setVisibility(View.GONE);
+                holderinfo.setVisibility(View.VISIBLE);
+
+                if(movie.getTrailers() != null) {
+
+                    trailerShare.setVisibility(View.VISIBLE);
+
+                    trailersRecycler.setLayoutManager(new LinearLayoutManager(MovieDetailsActivity.this, LinearLayoutManager.VERTICAL, false));
+                    trailersRecycler.setAdapter(new TrailerAdapter(MovieDetailsActivity.this, movie.getTrailers(), this));
+
+                }
+
+                if(movie.getReviews() != null) {
+
+                    reviewsRecycler.setLayoutManager(new LinearLayoutManager(MovieDetailsActivity.this, LinearLayoutManager.VERTICAL, false));
+                    reviewsRecycler.setAdapter(new ReviewAdapter(MovieDetailsActivity.this, movie.getReviews()));
+
+                }
+
+                updateUI();
+
+                verifyFavorite();
+
+
+            }
+
+        } else {
+
+            if(NetworkUtils.isNetworkAvailable(MovieDetailsActivity.this)) {
+                getMovieTrailersAndReviews();
+            }
+
+            updateUI();
+
+            verifyFavorite();
+
+
+        }
+
+    }
+
+    private void updateUI() {
+
         Picasso.with(this).load(movie.getMoviePosterThumbnail()).into(image);
         title.setText(movie.getOriginalTitle());
 
@@ -80,9 +134,29 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         rating.setText(String.format(getString(R.string.rating), movie.getUserRating()));
         synopsis.setText(movie.getSynopsis());
 
-        getMovieTrailersAndReviews();
+    }
 
-        verifyFavorite();
+    @OnClick(R.id.trailerShare) void onShareClicked() {
+
+        if(movie != null && movie.getTrailers() != null && movie.getTrailers().size() > 0) {
+
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_TEXT, String.format("http://www.youtube.com/watch?v=%s", movie.getTrailers().get(0).getTrailerKey()));
+            sendIntent.setType("text/plain");
+            startActivity(Intent.createChooser(sendIntent,  getString(R.string.share_with)));
+
+        }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        if(movie != null) {
+            outState.putParcelable(ARGS_EXTRA, movie);
+        }
 
     }
 
@@ -92,7 +166,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
             @Override
             protected Boolean doInBackground(Movie... params) {
-                return MoviesDao.getInstance(MovieDetailsActivity.this).movieIsFavorite(params[0]);
+                return MoviesDao.getInstance().movieIsFavorite(MovieDetailsActivity.this, params[0]);
             }
 
             @Override
@@ -120,7 +194,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
                     @Override
                     protected Void doInBackground(Movie... params) {
-                        MoviesDao.getInstance(MovieDetailsActivity.this).addMovieAsFavorite(params[0]);
+                        MoviesDao.getInstance().addMovieAsFavorite(MovieDetailsActivity.this, params[0]);
 
                         return null;
                     }
@@ -142,7 +216,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
 
                     @Override
                     protected Void doInBackground(Movie... params) {
-                        MoviesDao.getInstance(MovieDetailsActivity.this).removeFromFavorite(params[0]);
+                        MoviesDao.getInstance().removeFromFavorite(MovieDetailsActivity.this, params[0]);
 
                         return null;
                     }
@@ -200,14 +274,16 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
             protected void onStartLoading() {
                 super.onStartLoading();
 
+                progressInfo.setVisibility(View.VISIBLE);
+
                 onForceLoad();
             }
 
             @Override
             public Movie loadInBackground() {
 
-                List<Trailer> trailers = MoviesDao.getInstance(MovieDetailsActivity.this).getMovieTrailers(movie);
-                List<Review> reviews = MoviesDao.getInstance(MovieDetailsActivity.this).getMoviewReviews(movie);
+                List<Trailer> trailers = MoviesDao.getInstance().getMovieTrailers(movie);
+                List<Review> reviews = MoviesDao.getInstance().getMoviewReviews(movie);
 
                 movie.setTrailers(trailers);
                 movie.setReviews(reviews);
@@ -225,6 +301,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements LoaderMan
         holderinfo.setVisibility(View.VISIBLE);
 
         if(movie.getTrailers() != null) {
+
+            trailerShare.setVisibility(View.VISIBLE);
 
             trailersRecycler.setLayoutManager(new LinearLayoutManager(MovieDetailsActivity.this, LinearLayoutManager.VERTICAL, false));
             trailersRecycler.setAdapter(new TrailerAdapter(MovieDetailsActivity.this, data.getTrailers(), this));
