@@ -3,7 +3,6 @@ package victor.pettengill.popularmovies.dao;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
@@ -16,13 +15,11 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import victor.pettengill.popularmovies.beans.Movie;
 import victor.pettengill.popularmovies.beans.Review;
 import victor.pettengill.popularmovies.beans.Trailer;
 import victor.pettengill.popularmovies.constants.SortType;
-import victor.pettengill.popularmovies.data.DBHelper;
 import victor.pettengill.popularmovies.data.PopularMoviesContract;
 import victor.pettengill.popularmovies.network.NetworkUtils;
 
@@ -33,7 +30,7 @@ import victor.pettengill.popularmovies.network.NetworkUtils;
 public class MoviesDao {
 
     private final String BASE_API_URL = "http://api.themoviedb.org/3/";
-    private final String API_KEY = "?api_key=1668c5dd4e446f81205b03c3e7584af1";
+    private final String API_KEY = "?api_key=";
 
     private final String MOVIES_API = "movie/%s";
     private final String MOVIES_TRAILERS_API = "movie/%s/videos";
