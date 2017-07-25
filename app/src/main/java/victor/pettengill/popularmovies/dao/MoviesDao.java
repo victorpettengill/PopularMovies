@@ -36,6 +36,7 @@ public class MoviesDao {
     private final String MOVIES_TRAILERS_API = "movie/%s/videos";
     private final String MOVIES_REVIEWS_API = "movie/%s/reviews";
 
+    
     private static MoviesDao instance;
 
     public static MoviesDao getInstance() {
